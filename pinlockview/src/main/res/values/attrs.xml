@@ -12,7 +12,9 @@
         <attr name="keypadDeleteButtonSize" format="dimension" />
         <attr name="keypadShowDeleteButton" format="boolean" />
         <attr name="keypadDeleteButtonPressedColor" format="color" />
+    </declare-styleable>
 
+    <declare-styleable name="IndicatorDots">
         <attr name="dotEmptyBackground" format="reference" />
         <attr name="dotFilledBackground" format="reference" />
         <attr name="dotDiameter" format="dimension" />
@@ -22,7 +24,6 @@
             <enum name="fill" value="1" />
             <enum name="fillWithAnimation" value="2" />
         </attr>
-
     </declare-styleable>
 
 </resources>
