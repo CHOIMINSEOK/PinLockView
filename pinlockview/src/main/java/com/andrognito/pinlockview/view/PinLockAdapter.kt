@@ -15,9 +15,10 @@ import com.andrognito.pinlockview.data.CustomizedOptionsBundle
 class PinLockAdapter(
     var customizationOptions: CustomizedOptionsBundle = CustomizedOptionsBundle()
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
-    var onItemClickListener: OnNumberClickListener? = null
-    var onDeleteClickListener: OnDeleteClickListener? = null
-    var pinLength: Int = 0
+    private var mPin = ""
+    var pinLength: Int = customizationOptions.pinLength
+    var indicatorDots: IndicatorDots? = null
+    var mPinLockListener: PinLockListener? = null
 
     private var mKeyValues: IntArray = getAdjustKeyValues(intArrayOf(1, 2, 3, 4, 5, 6, 7, 8, 9, 0))
 
@@ -27,6 +28,65 @@ class PinLockAdapter(
             this.mKeyValues = getAdjustKeyValues(keyValues)
             notifyDataSetChanged()
         }
+
+    var onItemClickListener = object : OnNumberClickListener {
+        override fun onNumberClicked(keyValue: Int) {
+            if (mPin.length < pinLength) {
+                mPin += keyValue.toString()
+
+                indicatorDots?.updateDot(mPin.length)
+
+                if (mPin.length == 1) {
+                    notifyItemChanged(itemCount - 1)
+                }
+
+                if (mPin.length == pinLength) {
+                    mPinLockListener?.onComplete(mPin)
+                } else {
+                    mPinLockListener?.onPinChange(mPin.length, mPin)
+                }
+
+            } else {
+                if (!customizationOptions.showDeleteButton) {
+                    resetPinLockView()
+                    mPin += keyValue.toString()
+
+                    indicatorDots?.updateDot(mPin.length)
+                    mPinLockListener?.onPinChange(mPin.length, mPin)
+
+                } else {
+                    mPinLockListener?.onComplete(mPin)
+
+                }
+            }
+        }
+    }
+    var onDeleteClickListener = object : OnDeleteClickListener {
+        override fun onDeleteClicked() {
+            if (mPin.isNotEmpty()) {
+                mPin = mPin.substring(0, mPin.length - 1)
+
+                indicatorDots?.updateDot(mPin.length)
+                if (mPin.isEmpty()) {
+                    notifyItemChanged(itemCount - 1)
+                }
+
+                if (mPin.isEmpty()) {
+                    mPinLockListener?.onEmpty()
+                    clearInternalPin()
+                } else {
+                    mPinLockListener?.onPinChange(mPin.length, mPin)
+                }
+            } else {
+                mPinLockListener?.onEmpty()
+            }
+        }
+
+        override fun onDeleteLongClicked() {
+            resetPinLockView()
+            mPinLockListener?.onEmpty()
+        }
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
         val viewHolder: RecyclerView.ViewHolder
@@ -44,11 +104,9 @@ class PinLockAdapter(
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         if (holder.itemViewType == VIEW_TYPE_NUMBER) {
-            val vh1 = holder as NumberViewHolder
-            configureNumberButtonHolder(vh1, position)
+            configureNumberButtonHolder(holder as NumberViewHolder, position)
         } else if (holder.itemViewType == VIEW_TYPE_DELETE) {
-            val vh2 = holder as DeleteViewHolder
-            configureDeleteButtonHolder(vh2)
+            configureDeleteButtonHolder(holder as DeleteViewHolder)
         }
     }
 
@@ -75,7 +133,7 @@ class PinLockAdapter(
     }
 
     private fun configureDeleteButtonHolder(holder: DeleteViewHolder) {
-        if (customizationOptions.showDeleteButton && pinLength > 0) {
+        if (customizationOptions.showDeleteButton && mPin.isNotEmpty()) {
             holder.mButtonImage.visibility = View.VISIBLE
             if (customizationOptions.deleteButtonDrawable != null) {
                 holder.mButtonImage.setImageDrawable(customizationOptions.deleteButtonDrawable)
@@ -112,12 +170,29 @@ class PinLockAdapter(
         return adjustedKeyValues
     }
 
+    private fun clearInternalPin() {
+        mPin = ""
+    }
+
+    /**
+     * Resets the [PinLockView], clearing the entered pin
+     * and resetting the [IndicatorDots] if attached
+     */
+    fun resetPinLockView() {
+
+        clearInternalPin()
+
+        notifyItemChanged(itemCount - 1)
+
+        indicatorDots?.updateDot(mPin.length)
+    }
+
     inner class NumberViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         var mNumberButton: Button = itemView.findViewById(R.id.button)
 
         init {
             mNumberButton.setOnClickListener { v ->
-                onItemClickListener?.onNumberClicked(v.tag as Int)
+                onItemClickListener.onNumberClicked(v.tag as Int)
             }
         }
     }
@@ -128,11 +203,11 @@ class PinLockAdapter(
 
         init {
 
-            if (customizationOptions.showDeleteButton && pinLength > 0) {
-                mDeleteButton.setOnClickListener { onDeleteClickListener?.onDeleteClicked() }
+            if (customizationOptions.showDeleteButton && mPin.isNotEmpty()) {
+                mDeleteButton.setOnClickListener { onDeleteClickListener.onDeleteClicked() }
 
                 mDeleteButton.setOnLongClickListener {
-                    onDeleteClickListener?.onDeleteLongClicked()
+                    onDeleteClickListener.onDeleteLongClicked()
 
                     true
                 }
