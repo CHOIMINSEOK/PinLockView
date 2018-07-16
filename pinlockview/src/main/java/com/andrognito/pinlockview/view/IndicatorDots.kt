@@ -8,6 +8,10 @@ import android.view.View
 import android.widget.LinearLayout
 import com.andrognito.pinlockview.R
 import com.andrognito.pinlockview.util.ResourceUtils
+import android.view.animation.AnimationUtils
+import android.view.animation.Animation
+
+
 
 class IndicatorDots @JvmOverloads constructor(
     context: Context,
@@ -140,6 +144,12 @@ class IndicatorDots @JvmOverloads constructor(
                 mPreviousLength = 0
             }
         }
+    }
+
+    fun vibrate(listener: Animation.AnimationListener) {
+        val vibrate = AnimationUtils.loadAnimation(context, R.anim.vibrate)
+        vibrate.setAnimationListener(listener)
+        this.startAnimation(vibrate)
     }
 
     private fun emptyDot(dot: View) {

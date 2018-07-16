@@ -6,6 +6,7 @@ import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.animation.Animation
 import android.widget.Button
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -14,7 +15,7 @@ import com.andrognito.pinlockview.data.CustomizedOptionsBundle
 
 class PinLockAdapter(
     var customizationOptions: CustomizedOptionsBundle = CustomizedOptionsBundle()
-) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+) : RecyclerView.Adapter<RecyclerView.ViewHolder>(), Animation.AnimationListener {
     private var mPin = ""
     var pinLength: Int = customizationOptions.pinLength
     var indicatorDots: IndicatorDots? = null
@@ -41,6 +42,7 @@ class PinLockAdapter(
                 }
 
                 if (mPin.length == pinLength) {
+                    indicatorDots?.vibrate(this@PinLockAdapter)
                     mPinLockListener?.onComplete(mPin)
                 } else {
                     mPinLockListener?.onPinChange(mPin.length, mPin)
@@ -172,6 +174,12 @@ class PinLockAdapter(
 
     private fun clearInternalPin() {
         mPin = ""
+    }
+
+    override fun onAnimationStart(animation: Animation?) {}
+    override fun onAnimationRepeat(animation: Animation?) {}
+    override fun onAnimationEnd(animation: Animation?) {
+        resetPinLockView()
     }
 
     /**
